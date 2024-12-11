@@ -22,76 +22,70 @@ from .base import BaseChatModel, BaseModelArgs
 from .utils.jsonrepair import JsonRepair
 from .utils.llm_server_utils import get_llm_server_modelname
 
-try:
-    from openai import OpenAI, AsyncOpenAI
-    from openai import OpenAIError
-    from openai import AzureOpenAI, AsyncAzureOpenAI
-except ImportError:
-    is_openai_available = False
+from openai import OpenAI, AsyncOpenAI
+from openai import OpenAIError
+from openai import AzureOpenAI, AsyncAzureOpenAI
+
+api_key = None
+base_url = None
+model_name = None
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
+AZURE_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY")
+AZURE_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE")
+VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL")
+VLLM_API_KEY = os.environ.get("VLLM_API_KEY", "EMPTY")
+
+if not OPENAI_API_KEY and not AZURE_API_KEY:
     logger.warn(
-        "openai package is not installed. Please install it via `pip install openai`"
+        "OpenAI API key is not set. Please set an environment variable OPENAI_API_KEY or "
+        "AZURE_OPENAI_API_KEY."
     )
-else:
-    api_key = None
-    base_url = None
-    model_name = None
-    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
-    AZURE_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY")
-    AZURE_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE")
-    VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL")
-    VLLM_API_KEY = os.environ.get("VLLM_API_KEY", "EMPTY")
-
-    if not OPENAI_API_KEY and not AZURE_API_KEY:
-        logger.warn(
-            "OpenAI API key is not set. Please set an environment variable OPENAI_API_KEY or "
-            "AZURE_OPENAI_API_KEY."
-        )
-    elif OPENAI_API_KEY:
-        DEFAULT_CLIENT = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
-        DEFAULT_CLIENT_ASYNC = AsyncOpenAI(
-            api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL
-        )
-        api_key = OPENAI_API_KEY
-        base_url = OPENAI_BASE_URL
-    elif AZURE_API_KEY:
-        DEFAULT_CLIENT = AzureOpenAI(
-            api_key=AZURE_API_KEY,
-            azure_endpoint=AZURE_API_BASE,
-            api_version="2024-02-15-preview",
-        )
-        DEFAULT_CLIENT_ASYNC = AsyncAzureOpenAI(
-            api_key=AZURE_API_KEY,
-            azure_endpoint=AZURE_API_BASE,
-        )
-        api_key = AZURE_API_KEY
-        base_url = AZURE_API_BASE
-    if VLLM_BASE_URL:
-        if model_name := get_llm_server_modelname(VLLM_BASE_URL, VLLM_API_KEY, logger):
-            # model_name = /mnt/llama/hf_models/TheBloke_Llama-2-70B-Chat-GPTQ
-            # transform to TheBloke/Llama-2-70B-Chat-GPTQ
-            hf_model_name = model_name.split("/")[-1].replace("_", "/")
-            LOCAL_LLMS.append(model_name)
-            LOCAL_LLMS_MAPPING[model_name] = {
-                "hf_model_name": hf_model_name,
-                "base_url": VLLM_BASE_URL,
-                "api_key": VLLM_API_KEY if VLLM_API_KEY else "EMPTY",
-            }
-            logger.info(f"Using vLLM model: {hf_model_name}")
-    if hf_model_name := get_llm_server_modelname(
-        "http://localhost:5000", logger=logger
-    ):
-        # meta-llama/Llama-2-7b-chat-hf
-        # transform to llama-2-7b-chat-hf
-        short_model_name = model_name.split("/")[-1].lower()
-        LOCAL_LLMS.append(short_model_name)
-        LOCAL_LLMS_MAPPING[short_model_name] = {
+elif OPENAI_API_KEY:
+    DEFAULT_CLIENT = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+    DEFAULT_CLIENT_ASYNC = AsyncOpenAI(
+        api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL
+    )
+    api_key = OPENAI_API_KEY
+    base_url = OPENAI_BASE_URL
+elif AZURE_API_KEY:
+    DEFAULT_CLIENT = AzureOpenAI(
+        api_key=AZURE_API_KEY,
+        azure_endpoint=AZURE_API_BASE,
+        api_version="2024-02-15-preview",
+    )
+    DEFAULT_CLIENT_ASYNC = AsyncAzureOpenAI(
+        api_key=AZURE_API_KEY,
+        azure_endpoint=AZURE_API_BASE,
+    )
+    api_key = AZURE_API_KEY
+    base_url = AZURE_API_BASE
+if VLLM_BASE_URL:
+    if model_name := get_llm_server_modelname(VLLM_BASE_URL, VLLM_API_KEY, logger):
+        # model_name = /mnt/llama/hf_models/TheBloke_Llama-2-70B-Chat-GPTQ
+        # transform to TheBloke/Llama-2-70B-Chat-GPTQ
+        hf_model_name = model_name.split("/")[-1].replace("_", "/")
+        LOCAL_LLMS.append(model_name)
+        LOCAL_LLMS_MAPPING[model_name] = {
             "hf_model_name": hf_model_name,
-            "base_url": "http://localhost:5000/v1",
-            "api_key": "EMPTY",
+            "base_url": VLLM_BASE_URL,
+            "api_key": VLLM_API_KEY if VLLM_API_KEY else "EMPTY",
         }
+        logger.info(f"Using vLLM model: {hf_model_name}")
+if hf_model_name := get_llm_server_modelname(
+    "http://localhost:5000", logger=logger
+):
+    # meta-llama/Llama-2-7b-chat-hf
+    # transform to llama-2-7b-chat-hf
+    short_model_name = model_name.split("/")[-1].lower()
+    LOCAL_LLMS.append(short_model_name)
+    LOCAL_LLMS_MAPPING[short_model_name] = {
+        "hf_model_name": hf_model_name,
+        "base_url": "http://localhost:5000/v1",
+        "api_key": "EMPTY",
+    }
 
-        logger.info(f"Using FSChat model: {model_name}")
+    logger.info(f"Using FSChat model: {model_name}")
 
 
 class OpenAIChatArgs(BaseModelArgs):
@@ -144,8 +138,21 @@ class OpenAIChatArgs(BaseModelArgs):
 
 
 # To support your own local LLMs, register it here and add it into LOCAL_LLMS.
+def map_functions(functions):
+    tools = []
+    for function in functions:
+        tools.append(
+            {
+                "type": "function",
+                "function": function,
+            }
+        )
+    return tools
+
+
 @llm_registry.register("gpt-35-turbo")
 @llm_registry.register("gpt-3.5-turbo")
+@llm_registry.register("gpt-4o-mini")
 @llm_registry.register("gpt-4")
 @llm_registry.register("vllm")
 @llm_registry.register("local")
@@ -199,6 +206,7 @@ class OpenAIChat(BaseChatModel):
             "gpt-4-1106-preview": 131072,
             "gpt-4-0125-preview": 131072,
             "llama-2-7b-chat-hf": 4096,
+            "gpt-4o-mini": 32768,
         }
         # Default to 4096 tokens if model is not in the dictionary
         return send_token_limit_dict[model] if model in send_token_limit_dict else 4096
@@ -332,19 +340,20 @@ class OpenAIChat(BaseChatModel):
             if functions != []:
                 response = await async_openai_client.chat.completions.create(
                     messages=messages,
-                    functions=functions,
+                    tools=map_functions(functions),
                     **self.args.dict(),
                 )
                 logger.log_prompt(
                     [
                         {
                             "role": "assistant",
-                            "content": response.choices[0].message.content,
+                            "content": response.choices[0].message.json(),
                         }
                     ]
                 )
-                if response.choices[0].message.function_call is not None:
-                    function_name = response.choices[0].message.function_call.name
+                if response.choices[0].message.tool_calls is not None:
+                    tool = response.choices[0].message.tool_calls[0].function
+                    function_name = tool.name
                     valid_function = False
                     if function_name.startswith("function."):
                         function_name = function_name.replace("function.", "")
@@ -363,13 +372,13 @@ class OpenAIChat(BaseChatModel):
                         )
                     try:
                         arguments = ast.literal_eval(
-                            response.choices[0].message.function_call.arguments
+                            tool.arguments
                         )
                     except:
                         try:
                             arguments = ast.literal_eval(
                                 JsonRepair(
-                                    response.choices[0].message.function_call.arguments
+                                    tool.arguments
                                 ).repair()
                             )
                         except:
@@ -381,10 +390,12 @@ class OpenAIChat(BaseChatModel):
                             )
                     self.collect_metrics(response)
                     logger.log_prompt(
-                        {
-                            "role": "assistant",
-                            "content": response.choices[0].message.content,
-                        }
+                        [
+                            {
+                                "role": "assistant",
+                                "content": response.choices[0].message.json(),
+                            }
+                        ]
                     )
                     return LLMResult(
                         function_name=function_name,
@@ -463,6 +474,7 @@ class OpenAIChat(BaseChatModel):
             "gpt-4-1106-preview": 0.01,
             "gpt-4-0125-preview": 0.01,
             "llama-2-7b-chat-hf": 0.0,
+            "gpt-4o-mini": 0.00015,
         }
 
         output_cost_map = {
@@ -478,6 +490,7 @@ class OpenAIChat(BaseChatModel):
             "gpt-4-1106-preview": 0.03,
             "gpt-4-0125-preview": 0.03,
             "llama-2-7b-chat-hf": 0.0,
+            "gpt-4o-mini": 0.0006,
         }
 
         model = self.args.model

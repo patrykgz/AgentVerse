@@ -1,0 +1,280 @@
+cnt_agents: &cnt_agents 4
+max_turn: &max_turn 3
+max_inner_turns: &max_inner_turns 0
+
+task_description: |-
+  I want to create a benefit using the Ben benefit platform, to do this, I need you to 
+  assemble a plan for me. The plan should be a JSON object, made up of steps with the 
+  tools that I have access to. A benefit is typically made up by the following:
+  
+  - A name
+  - A description
+  - Optional Eligibility rules (define who can access the benefit)
+  - 1 or more Pricing Formulas (define how the benefit is priced).
+  
+  There are tools that you can use to create a benefit. Each tool has a specific 
+  format that you need to follow; if you don't follow the format, the tool will 
+  not work.
+  
+  Just so you know, Benefits may contain a Step and Components within a step. 
+  This is only required if we need user inputs. Providing no Eligibility Rules 
+  results in everyone being eligible. Component key names should be lowercase and 
+  use underscores only.
+  
+  When creating pricing formulas, remember to consider whether the employee pays or 
+  the employer pays. If the employee pays, then set the 
+  employee_percentage_contribution to 100%. 
+  
+  Use the following chain of thought to guide your response: 
+  
+  1. Begin by validating whether the description provided qualifies 
+  as a reasonable benefit. If it is not reasonable, return Null immediately. 
+  
+  2. Identify all required elements: name, description, eligibility rules, 
+  and pricing formulas. 
+  
+  3. Confirm the formatting rules are adhered to, such as lowercase and 
+  underscore usage in component keys. 
+  
+  4. Check whether user inputs are necessary, and if so, incorporate Steps 
+  and Components accordingly. 
+  
+  5. Verify employee cost contributions, ensuring that 
+  employee_percentage_contribution is 100% when the employee pays. 
+  
+  6. Inspect the JSON for personal data, replacing any email addresses and noting the 
+  replacement in the reasoning. 
+  
+  7. Assemble the plan as a JSON object that adheres to all requirements and 
+  tool specifications. 
+  
+  8. If the plan does not meet the outlined criteria at any point, 
+  provide a Null response with an explanation.
+  
+  {'setDisplayName': '{\n      "$schema": "setDisplayName",\n      "type": "object",\n      "description": "Set the display name of the benefit",\n      "properties": {\n        "name": {\n          "type": "string"\n        }\n      },\n      "required": [\n        "name"\n      ]\n    }', 'setShortDescription': '{\n      "$schema": "setShortDescription",\n      "type": "object",\n      "description": "Set the short description of the benefit, max 15 words",\n      "properties": {\n        "short_description": {\n          "type": "string"\n        }\n      },\n      "required": [\n        "name"\n      ]\n    }', 'createNewStep': '{\n        "$schema": "createNewStep",\n        "type": "object",\n        "description": "Creates a new step within the benefit",\n        "properties": {\n            "name": {\n            "type": "string"\n            }\n        },\n        "required": [\n            "name"\n        ]\n    }', 'createNewAmountInputComponent': '{\n        "$schema": "createNewAmountInputComponent",\n        "type": "object",\n        "description": "Creates a new amount input component within the latest created\n        step. The \'key\' is the key that will be used to store the value in the backend\n        and used in the pricing formula",\n        "properties": {\n            "name": {\n            "type": "string"\n            },\n            "show_name": {\n            "type": "boolean"\n            },\n            "min": {\n            "type": "number"\n            },\n            "max": {\n            "type": "number"\n            },\n            "key": {\n            "type": "string"\n            },\n            "required": {\n            "type": "boolean"\n            }\n        },\n        "required": [\n            "name",\n            "show_name",\n            "min",\n            "max",\n            "key",\n            "required"\n        ]\n    }', 'createNewTextInputComponent': '{\n        "$schema": "createNewTextInputComponent",\n        "type": "object",\n        "description": "Creates a new text input component within the latest created\n        step. The \'key\' is the key that will be used to store the value in the backend\n        and used in the pricing formula",\n        "properties": {\n            "name": {\n                "type": "string"\n            },\n            "show_name": {\n                "type": "boolean"\n            },\n            "maxLength": {\n                "type": "number"\n            },\n            "key": {\n                "type": "string"\n            },\n            "required": {\n                "type": "boolean"\n            }\n        },\n        "required": [\n            "name",\n            "maxLength",\n            "key",\n            "required",\n            "show_name"\n        ]\n    }', 'createNewContactsFieldComponent': '{\n        "$schema": "createNewContactsFieldComponent",\n        "type": "object",\n        "description": "Creates a new CONTACTS field component within the latest created\n        step. The \'key\' is the key that will be used to store the value in the backend\n        and used in the pricing formula. The CONTACTS field is used by the employee to\n        add dependants or other contacts to the benefit, usually used for insurance\n        benefits. The employee can add different types of contacts,\n        the accepted_contact_types can have one or more of the following values:\n        SPOUSE, CHILD, FRIEND, OTHER.",\n        "properties": {\n            "name": {\n                "type": "string"\n            },\n            "show_name": {\n                "type": "boolean"\n            },\n            "key": {\n                "type": "string"\n            },\n            "required": {\n                "type": "boolean"\n            },\n            "accepted_contact_types": {\n                "type": "array",\n                "items": {\n                    "type": "string",\n                    "enum": ["SPOUSE", "CHILD", "FRIEND", "OTHER"]\n                  }\n            }\n        },\n        "required": [\n            "name",\n            "key",\n            "required",\n            "show_name",\n            "accepted_contact_types"\n        ]\n    }', 'createBenefitDescription': '{\n        "$schema": "createBenefitDescription",\n        "type": "object",\n        "description": "Generate a benefit description from a short description",\n        "properties": {\n            "request": {\n            "type": "string"\n            },\n            "language": {\n            "type": "string"\n            }\n        },\n        "required": [\n            "request",\n            "language"\n        ]\n    }', 'createEligibilityRule': '{\n        "$schema": "createEligibilityRule",\n        "type": "object",\n        "description": "Generate an eligibility rule from a short description of\n        who should be eligible. No eligibility rules means everyone is eligible",\n        "properties": {\n            "request": {\n            "type": "string"\n            }\n        },\n        "required": [\n            "request"\n        ]\n    }', 'createPricingFormula': '{\n        "$schema": "createPricingFormula",\n        "type": "object",\n        "description": "Generate a pricing formula from a short natural language\n        description of how the benefit should be priced. ENSURE to provide the EXACT\n        name of any component keys so they can be used in the formula IF required.\n        Describe the pricing formula in regards to one employee who is part of this\n        benefit and their dependents if applicable. The name of the pricing formula is\n        displayed to the user. The contribution is the percentage that the employee\n        contributes to the benefit, the rest is covered by the employer. ",\n        "properties": {\n            "request": {\n                "type": "string"\n            },\n            "name": {\n                "type": "string"\n            },\n            "employee_percentage_contribution": {\n                "type": "number"\n            }\n        },\n        "required": [\n            "request"\n        ]\n    }', 'createBenefitWindows': '{\n        "$schema": "createBenefitWindows",\n        "type": "object",\n        "description": "Generate a time window for the benefit during which the employee\n        can enroll, change or unenroll from the benefit.\n        There are 4 types of windows:\n        - CONFIG_WINDOW  # to configure a benefit e.g. insurance\n        - OPT_IN_WINDOW = # to enroll/opt-in to a benefit\n        - OPT_OUT_WINDOW = # to stay opted-out of a benefit\n        - LOCKED_WINDOW = # disallow enrolment changes\n        After the window_type, you can specify the start date of the window. It\'s either\n        rule based or a specific date. If it\'s rule based, you can specify the rule\n        by setting the \'starts_on\' key to one of the following values:\n        - EMPLOYMENT_START = Employment start date\n        - ELIGIBILITY_START = Eligibility start date\n        - PROBATION_END = Probation end date\n        - POSTPONEMENT_END = Postponement end date\n        - OPT_IN = Opt in date\n        and the set number of days in the field ends_after_days.\n        If it\'s a specific date, you set the \'starts_on\' key to SPECIFIC_DATE\n        and you can specify the date range in the fields starts_on_specific_date\n        and ends_on_specific_date",\n        "properties": {\n            "window_type": {\n                "type": "string",\n                "enum": ["CONFIG_WINDOW", "OPT_IN_WINDOW", "OPT_OUT_WINDOW",\n                "LOCKED_WINDOW"]\n            },\n            "starts_on": {\n                "type": "string",\n                "enum": ["SPECIFIC_DATE","EMPLOYMENT_START","ELIGIBILITY_START",\n                "PROBATION_END","POSTPONEMENT_END","OPT_IN"]\n            },\n            "ends_after_days": {\n                "type": "number"\n            },\n            "starts_on_specific_date": {\n                "type": "string",\n                "format": "date"\n            },\n            "ends_on_specific_date": {\n                "type": "string",\n                "format": "date"\n            }\n        },\n        "required": [\n            "window_type",\n            "starts_on"\n        ]\n    }', 'createBenefitStartDate': '{\n        "$schema": "createBenefitStartDate",\n        "type": "object",\n        "description": "Create a start date for the benefit.\n        Not all benefits have a start, but if they do, you can specify the start date.\n        The format of the start date must be: YYYY-MM-DD",\n        "properties": {\n            "start_date": {\n                "type": "string",\n                "format": "date"\n            }\n        },\n        "required": [\n            "start_date"\n        ]\n    }', 'createBenefitRenewalDate': '{\n        "$schema": "createBenefitRenewalDate",\n        "type": "object",\n        "description": "Create a renewal date for the benefit.\n        Not all benefits renew, but if they do, you can specify the renewal date.\n        The format of the renewal date must be: YYYY-MM-DD",\n        "properties": {\n            "renewal_date": {\n                "type": "string",\n                "format": "date"\n            }\n        },\n        "required": [\n            "renewal_date"\n        ]\n    }', 'createBenefitEnrolmentType': '{\n        "$schema": "createBenefitEnrolmentType",\n        "type": "object",\n        "description": "Create an enrolment type for the benefit. The enrolment type\n        can be one of the following:\n        - OPT_IN # optional, employees can opt-in\n        - OPT_OUT # benefit is selected for EEs by default but employees can opt-out\n        - LOCKED # benefit is selected for EEs and can\'t be changed\n        ",\n        "properties": {\n            "enrolment_type": {\n                "type": "string",\n                "enum": ["OPT_IN", "OPT_OUT", "LOCKED"]\n            }\n        },\n        "required": [\n            "enrolment_type"\n        ]\n    }', 'createBenefitAutoActivatingFlag': '{\n        "$schema": "createBenefitAutoActivatingFlag",\n        "type": "object",\n        "description": "Create an auto activating boolean flag for the benefit.\n        This flag tells the system whether the benefit should be automatically\n         activated when the employee enrolls (meaning the enrolment\n         automatically gets the status \'ACTIVE\').",\n        "properties": {\n            "auto_activating": {\n                "type": "boolean"\n            }\n        },\n        "required": [\n            "auto_activating"\n        ]\n    }', 'createBenefitRequiresApprovalFlag': '{\n        "$schema": "createBenefitRequiresApprovalFlag",\n        "type": "object",\n        "description": "Create an requires approval boolean flag for the benefit.\n        This flag tells the system whether company admins need to\n        approve opt-in, opt-out, or changes to enrolment.",\n        "properties": {\n            "requires_approval": {\n                "type": "boolean"\n            }\n        },\n        "required": [\n            "requires_approval"\n        ]\n    }', 'createBenefitAgeCalculateFrom': '{\n        "$schema": "createBenefitAgeCalculateFrom",\n        "type": "object",\n        "description": "If employee\'s age is required to calculate the price,\n        specify when to calculate it from. The options are as follows:\n        - TODAY = Current date (of price calculation)\n        - POLICY_LAUNCH = Policy launch date\n        - EMPLOYEE_POLICY = Employee policy start date\n        - OPT_IN_DATE = Opt in date\n        - ENROLMENT_START = Enrolment start date for Employee\n        - NEXT_BIRTHDAY = Next birthday",\n        "properties": {\n            "age_calculate_from": {\n                "type": "string",\n                "enum": ["TODAY", "POLICY_LAUNCH", "EMPLOYEE_POLICY",\n                "OPT_IN_DATE", "ENROLMENT_START", "NEXT_BIRTHDAY"]\n            }\n        },\n        "required": [\n            "age_calculate_from"\n        ]\n    }', 'createBenefitSalaryCalculateFrom': '{\n        "$schema": "createBenefitSalaryCalculateFrom",\n        "type": "object",\n        "description": "Logic used to control which salary is used during the\n        execution of a pricing formula. The options are as follows:\n        - TODAY = Current date (of price calculation)\n        - POLICY_START_DATE = Policy start date",\n        "properties": {\n            "salary_calculate_from": {\n                "type": "string",\n                "enum": ["TODAY", "POLICY_START_DATE"]\n            }\n        },\n        "required": [\n            "salary_calculate_from"\n        ]\n    }', 'createBenefitActivationDelay': '{\n        "$schema": "createBenefitActivationDelay",\n        "type": "object",\n        "description": "Create the delay, if needed, for the benefit enrolment.\n        When the employee enrolls in the benefit, the benefit will be activated\n        with the delay specified. Some benefits become active right away, but\n        others not, depending on type of benefit or how the provider processes\n        the enrolment request. If in IN_X_DAYS_TIME is selected the number of\n        days should be specified in the field \'days\'.\n        The delay can be one of the following:,\n        - NEVER = Never\n        - FIRST_OF_NEXT_WEEK = First of Next Week\n        - FIRST_OF_NEXT_MONTH = First of Next Month\n        - LAST_OF_NEXT_MONTH = Last of Next Month\n        - LAST_OF_CURRENT_MONTH = Last of Current Month\n        - FIRST_OF_NEXT_QUARTER = First of Next Quarter\n        - IN_X_DAYS_TIME = In X Days Time\n        - ON_THE_SAME_DAY = On the Same Day\n        - FIRST_OF_CURRENT_MONTH = First of Current Month\n        - FIRST_OF_MONTH_AFTER_NEXT_MONTH = First of Month after Next Month\n        ",\n        "properties": {\n            "activation_delay": {\n                "type": "string",\n                "enum": ["NEVER", "FIRST_OF_NEXT_WEEK", "FIRST_OF_NEXT_MONTH",\n                "LAST_OF_NEXT_MONTH", "LAST_OF_CURRENT_MONTH", "FIRST_OF_NEXT_QUARTER",\n                "IN_X_DAYS_TIME", "ON_THE_SAME_DAY", "FIRST_OF_CURRENT_MONTH",\n                "FIRST_OF_MONTH_AFTER_NEXT_MONTH"]\n            },\n            "days": {\n                "type": "number"\n            }\n        },\n        "required": [\n            "activation_delay"\n        ]\n    }', 'createBenefitFulfillmentDelay': '{\n        "$schema": "createBenefitFulfillmentDelay",\n        "type": "object",\n        "description": "Create the delay, if needed, for the benefit enrolment.\n        When the employee enrolls in the benefit, the benefit will be fulfilled\n        with the delay specified. Some providers need time to process the enrolment\n        and we need to show the employee and estimate date when the benefit will be\n        fulfilled.\n        If in IN_X_DAYS_TIME is selected the number ofdays should be specified\n        in the field \'days\'.\n        The delay can be one of the following:,\n        - NEVER = Never\n        - FIRST_OF_NEXT_WEEK = First of Next Week\n        - FIRST_OF_NEXT_MONTH = First of Next Month\n        - LAST_OF_NEXT_MONTH = Last of Next Month\n        - LAST_OF_CURRENT_MONTH = Last of Current Month\n        - FIRST_OF_NEXT_QUARTER = First of Next Quarter\n        - IN_X_DAYS_TIME = In X Days Time\n        - ON_THE_SAME_DAY = On the Same Day\n        - FIRST_OF_CURRENT_MONTH = First of Current Month\n        - FIRST_OF_MONTH_AFTER_NEXT_MONTH = First of Month after Next Month\n        ",\n        "properties": {\n            "fulfillment_delay": {\n                "type": "string",\n                "enum": ["NEVER", "FIRST_OF_NEXT_WEEK", "FIRST_OF_NEXT_MONTH",\n                "LAST_OF_NEXT_MONTH", "LAST_OF_CURRENT_MONTH", "FIRST_OF_NEXT_QUARTER",\n                "IN_X_DAYS_TIME", "ON_THE_SAME_DAY", "FIRST_OF_CURRENT_MONTH",\n                "FIRST_OF_MONTH_AFTER_NEXT_MONTH"]\n            },\n            "days": {\n                "type": "number"\n            }\n        },\n        "required": [\n            "fulfillment_delay"\n        ]\n    }', 'createBenefitDeactivationDelay': '{\n        "$schema": "createBenefitDeactivationDelay",\n        "type": "object",\n        "description": "Create the delay, if needed, for the benefit enrolment.\n        When the employee un-enrolls from the benefit, the benefit will become inactive\n        with the delay specified. Some benefits are deactivated right away, but\n        others not, depending on type of benefit or how the provider processes the\n        user request to stop using the benefit.\n        If in IN_X_DAYS_TIME is selected the number of days should be specified\n        in the field \'days\'.\n        The delay can be one of the following:,\n        - NEVER = Never\n        - FIRST_OF_NEXT_WEEK = First of Next Week\n        - FIRST_OF_NEXT_MONTH = First of Next Month\n        - LAST_OF_NEXT_MONTH = Last of Next Month\n        - LAST_OF_CURRENT_MONTH = Last of Current Month\n        - FIRST_OF_NEXT_QUARTER = First of Next Quarter\n        - IN_X_DAYS_TIME = In X Days Time\n        - ON_THE_SAME_DAY = On the Same Day\n        - FIRST_OF_CURRENT_MONTH = First of Current Month\n        - FIRST_OF_MONTH_AFTER_NEXT_MONTH = First of Month after Next Month\n        ",\n        "properties": {\n            "deactivation_delay": {\n                "type": "string",\n                "enum": ["NEVER", "FIRST_OF_NEXT_WEEK", "FIRST_OF_NEXT_MONTH",\n                "LAST_OF_NEXT_MONTH", "LAST_OF_CURRENT_MONTH", "FIRST_OF_NEXT_QUARTER",\n                "IN_X_DAYS_TIME", "ON_THE_SAME_DAY", "FIRST_OF_CURRENT_MONTH",\n                "FIRST_OF_MONTH_AFTER_NEXT_MONTH"]\n            },\n            "days": {\n                "type": "number"\n            }\n        },\n        "required": [\n            "deactivation_delay"\n        ]\n    }'}
+  
+  ---
+  
+  BENEFIT:
+  
+  PMI (ROI):
+
+  Eligibility:
+  Eligibility varies on what part of the ROI an EE is in
+  Need to ensure that data is being pulled into Ben to satisfy above
+  Cement division for salaried staff who are monthly paid - Single cover with opportunity to upgrade to couple/family (this part is EE paid)
+  Cement division, bi-weekly paid - ability to join on self paid basis
+  Breedon Ireland - eligible for single cover with ability to upgrade to partner/family on self paid basis. NON-HOURLY PAID EEs only (i.e. monthly paid EEs only). This is the same eligibility as Cement division, monthly paid.
+  Cover level depends on job role of EE
+  Need to confirm which fields within EE data will define eligibility and level of cover paid by EE/ER
+  
+  Upgrades/pricing:
+  HealthGuide 2. Set rate for EE (1612.30 EUR per EE). Partner is charged at same rate. 
+  7 different categories of dependant rate that are linked to age. E.g. rate for under 18s (428.86 EUR), 18-20, up to 25, then 25+
+  For EEs that have family coverage paid by ER, if the EE is in Breedon Ireland, the EE will receive coverage up to the dependant turning 18 yrs old. In cement division, the age is disregarded.
+  Historical EEs have other arrangements on policy, potential for these EEs to be accommodated within pricing formulas. Breedon will divert EEs to HR team in the meantime.
+  Renewal date = 1st Jan each year
+  Rates quoted above are for 1st Jan 2025
+  LCR (Lifetime Community Rating) - confirming that LCR will be handled off-platform (EEs will speak to provider directly about this). Pricing on platform will not reflect LCR surcharge.
+  
+  Enrolment:
+  No upgrade/downgrade options
+  Opt in benefit
+  Current logic is that policy start date is when EE signs application form
+  Policy start date for EEs TBC once provider team has been looped in
+  Enrolment windows:	
+  TBC
+
+
+prompts:
+  role_assigner_prepend_prompt: &role_assigner_prepend_prompt |-
+
+  role_assigner_append_prompt: &role_assigner_append_prompt |-
+    You are the leader of a group of experts, now you are faced with a task:
+    
+    ${task_description}
+    
+    You can recruit ${cnt_critic_agents} expert team members in different regions.
+    What experts will you recruit to better generate a benefit plan?
+    
+    Output format example:
+    1. an electrical engineer specified in the field of xxx
+    2. an economist who is good at xxx
+    3. a lawyer with a good knowledge of xxx
+    ...
+    
+    ${advice}
+    You don't have to give the reason.
+
+  solver_prepend_prompt: &solver_prepend_prompt |-
+    You are a summarizer. 
+    Your task is to categorize and collect the benefit plan in the chat history.
+
+    The question of the discussing is to ${task_description}. Below is the chat history:
+    
+  solver_append_prompt: &solver_append_prompt |-
+    Please output as JSON: 
+    
+    {"$defs":{"Step":{"properties":{"toolName":{"title":"Toolname","type":"string"},"args":{"title":"Args","type":"string"}},"required":["toolName","args"],"title":"Step","type":"object"}},"properties":{"thoughts":{"title":"Thoughts","type":"string"},"steps":{"items":{"$ref":"#/$defs/Step"},"title":"Steps","type":"array"}},"required":["thoughts","steps"],"title":"PlannerResponse","type":"object"}
+
+  critic_prepend_prompt: &critic_prepend_prompt |-
+    You are ${role_description}. You are in a discussion group, aiming to ${task_description}.
+
+  critic_append_prompt: &critic_append_prompt |-
+    Now the group is asking your opinion about it. Based on your knowledge in your field, do you agree that this solution can perfectly solve the problem? Or do you have any ideas to improve it?
+    
+    - If you thinks it is perfect, use the following output format:
+    Action: Agree
+    Action Input: Agree.
+    (Do not output your reason for agreeing!)
+
+    - If you want to give complemented opinions to improve it or to contradict with it, use the following output format:
+    Action: Disagree
+    Action Input: (what you want to say in one line)
+    
+    P.S. Always remember you are ${role_description}!
+    
+    If no former solution or critic opinions are given, you can just disagree and output your idea freely, based on the expertise of your role.
+    Remember, the ideas should be specific and detailed enough, not just general opinions.
+
+  evaluator_prepend_prompt: &evaluator_prepend_prompt |-
+
+  evaluator_append_prompt: &evaluator_append_prompt |-
+    Your task is to evaluate the benefit plan in the solution.
+ 
+    The goal is to ${task_description}.
+    
+    Please rate the ideas in the content in the following dimensions:
+        1. Comprehensiveness: Are they comprehensive enough to cover all the 
+           important aspects the task description included?
+        2. Detailedness: Are they detailed enough to be implemented?
+        3. Feasibility: Are they reasonable and practical?
+        4. Correct: Are they correct?
+    
+    0 is bad
+    10 is perfect
+    
+    and then in the fifth line of output, give your detailed advice for the solution generators.
+    You can also give advice to the human resource staff on what experts they should recruit.
+    Just say the drawbacks of the ideas, no need to do compliments first.
+    
+  
+    #Output format
+    You must output in the following format:
+    1. Comprehensiveness: (a score between 0 and 9)
+    2. Detailedness: (a score between 0 and 9)
+    3. Feasibility: (a score between 0 and 9)
+    4. Correctness: (a score between 0 and 9)
+    5. Advice: (your advice in one line)
+    
+    Here is the content you have to evaluate:
+    ${solution}
+    
+
+name: pipeline
+
+
+environment:
+  env_type: task-basic
+  max_turn: *max_turn
+  rule:
+    role_assigner:
+      type: role_description
+      cnt_agents: *cnt_agents
+    decision_maker:
+      type: brainstorming
+      max_inner_turns: *max_inner_turns
+    executor:
+      type: none
+    evaluator:
+      type: basic
+
+agents:
+  - #role_assigner_agent:
+    agent_type: role_assigner
+    name: role assigner
+    max_retry: 1000
+    prepend_prompt_template: *role_assigner_prepend_prompt
+    append_prompt_template: *role_assigner_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4o-mini
+      model: "gpt-4o-mini"
+      temperature: 0
+      max_tokens: 512
+    output_parser:
+      type: role_assigner
+
+  - #solver_agent:
+    agent_type: solver
+    name: Summarizer
+    max_retry: 1000
+    max_history: 5
+    prepend_prompt_template: *solver_prepend_prompt
+    append_prompt_template: *solver_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4o-mini
+      model: "gpt-4o-mini"
+      temperature: 0
+      max_tokens: 8192
+    output_parser:
+      type: dummy
+
+  - #critic_agents:
+    agent_type: critic
+    name: Reviewer
+    max_retry: 1000
+    max_history: 5
+    role_description: |-
+      Waiting to be assigned.
+    prepend_prompt_template: *critic_prepend_prompt
+    append_prompt_template: *critic_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4o-mini
+      model: "gpt-4o-mini"
+      temperature: 0
+      max_tokens: 8192
+    output_parser:
+      type: critic
+
+  - #executor_agent:
+    agent_type: executor
+    name: Dummy Executor
+    max_retry: 1000
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4o-mini
+      model: gpt-4o-mini
+      temperature: 0
+      max_tokens: 8192
+    output_parser:
+      type: dummy
+
+  - #evaluator_agent:
+    agent_type: evaluator
+    name: Evaluator
+    max_retry: 1000
+    role_description: |-
+      Evaluator
+    prepend_prompt_template: *evaluator_prepend_prompt
+    append_prompt_template: *evaluator_append_prompt
+    memory:
+      memory_type: chat_history
+    llm:
+      llm_type: gpt-4o-mini
+      model: gpt-4o-mini
+      temperature: 0.3
+      max_tokens: 8192
+    output_parser:
+      type: evaluator
+      dimensions:
+        - Comprehensiveness
+        - Detailedness
+        - Feasibility
+        - Correctness

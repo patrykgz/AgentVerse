@@ -190,14 +190,12 @@ class ToolUsingExecutor(BaseExecutor):
     ):
         async with ClientSession(cookies=cookies) as session:
             if cookies is None:
-                async with session.post(f"{url}/get_cookie", timeout=30) as response:
+                async with session.request("POST", f"{url}/get_cookie", timeout=30) as response:
                     cookies = response.cookies
-                    session.cookie_jar.update_cookies(cookies)
-                    await response.text()
-                    # Sometimes the toolserver's docker container is not ready yet
-                    # So we need to wait for a while
-                    await asyncio.sleep(10)
-            async with session.post(
+                    session.cookies.update(cookies)
+
+            async with session.request(
+                "POST",
                 f"{url}/retrieving_tools", json={"question": plan.content, "top_k": 5}
             ) as response:
                 retrieved_tools = await response.json()
@@ -302,15 +300,11 @@ class ToolUsingExecutor(BaseExecutor):
             try:
                 async with httpx.AsyncClient(cookies=cookies, trust_env=True) as session:
                     if cookies is None:
-                        async with session.post(
+                        response = await session.post(
                             f"{url}/get_cookie", timeout=30
-                        ) as response:
-                            cookies = response.cookies
-                            session.cookie_jar.update_cookies(cookies)
-                            await response.text()
-                            # Sometimes the toolserver's docker container is not ready yet
-                            # So we need to wait for a while
-                            await asyncio.sleep(10)
+                        )
+                        cookies = response.cookies
+                        session.cookies.update(cookies)
 
                     payload_arguments = deepcopy(arguments)
                     if "thought" in payload_arguments:
@@ -320,45 +314,45 @@ class ToolUsingExecutor(BaseExecutor):
                         "arguments": payload_arguments,
                     }
                     # async with ClientSession() as session:
-                    async with session.post(
+                    response = await session.post(
                         f"{url}/execute_tool",
                         json=payload,
                         timeout=30,
-                    ) as response:
-                        content = await response.text()
-                        if command == "WebEnv_browse_website":
-                            client_async.http_client = session
-                            result = await _summarize_webpage(
-                                content, arguments["goals_to_browse"]
-                            )
-                        elif command == "WebEnv_search_and_browse":
-                            client_async.http_client = session
-                            content = json.loads(content)
-
-                            # for i in range(len(content)):
-                            summarized = await asyncio.gather(
-                                *[
-                                    _summarize_webpage(
-                                        content[i]["page"], arguments["goals_to_browse"]
-                                    )
-                                    for i in range(len(content))
-                                ]
-                            )
-                            for i in range(len(content)):
-                                content[i]["page"] = summarized[i]
-                            result = ""
-                            for i in range(len(content)):
-                                result += f"SEARCH_REASULT {i}:\n"
-                                result += content[i]["page"].strip() + "\n\n"
-                            result = result.strip()
-                        else:
-                            result = content
-                        message = ExecutorMessage(
-                            content=result,
-                            sender="function",
-                            tool_name=command,
-                            tool_input=arguments,
+                    )
+                    content = response.text
+                    if command == "WebEnv_browse_website":
+                        client_async.http_client = session
+                        result = await _summarize_webpage(
+                            content, arguments["goals_to_browse"]
                         )
+                    elif command == "WebEnv_search_and_browse":
+                        client_async.http_client = session
+                        content = json.loads(content)
+
+                        # for i in range(len(content)):
+                        summarized = await asyncio.gather(
+                            *[
+                                _summarize_webpage(
+                                    content[i]["page"], arguments["goals_to_browse"]
+                                )
+                                for i in range(len(content))
+                            ]
+                        )
+                        for i in range(len(content)):
+                            content[i]["page"] = summarized[i]
+                        result = ""
+                        for i in range(len(content)):
+                            result += f"SEARCH_REASULT {i}:\n"
+                            result += content[i]["page"].strip() + "\n\n"
+                        result = result.strip()
+                    else:
+                        result = content
+                    message = ExecutorMessage(
+                        content=result,
+                        sender="function",
+                        tool_name=command,
+                        tool_input=arguments,
+                    )
                     # async with session.post(
                     #     f"{url}/release_session", timeout=30
                     # ) as response:
